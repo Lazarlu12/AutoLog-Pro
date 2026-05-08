@@ -39,16 +39,25 @@ export async function POST(req: Request) {
   // Manejar eventos
   switch (evt.type) {
     case "user.created": {
+      // Agregamos una validación de seguridad
+      const email = evt.data.email_addresses?.[0]?.email_address;
+      
+      if (!email || !evt.data.id) {
+        return new Response("Faltan datos del usuario (email o id)", { status: 400 });
+      }
+
       await prisma.user.create({
         data: {
           clerkId: evt.data.id,
-          email: evt.data.email_addresses[0].email_address,
-          name: `${evt.data.first_name ?? ""} ${evt.data.last_name ?? ""}`.trim(),
-          imageUrl: evt.data.image_url,
+          email: email,
+          name: `${evt.data.first_name ?? ""} ${evt.data.last_name ?? ""}`.trim() || "Usuario sin nombre",
+          imageUrl: evt.data.image_url ?? "",
         },
       });
       break;
     }
+    // ... (lo mismo para user.updated si quieres)
+  
 
     case "user.updated": {
       await prisma.user.update({
