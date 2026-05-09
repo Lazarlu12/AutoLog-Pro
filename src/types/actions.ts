@@ -1,3 +1,5 @@
+import type { MaintenanceRecord } from "@prisma/client"
+
 export type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> }
@@ -17,3 +19,11 @@ export const fail = (
   error,
   fieldErrors,
 })
+
+/**
+ * MaintenanceRecord con `cost` como number | null en lugar de Prisma.Decimal.
+ * Se usa como tipo de retorno en las Server Actions para garantizar serialización.
+ */
+export type SerializableMaintenanceRecord = Omit<MaintenanceRecord, "cost"> & {
+  cost: number | null
+}
