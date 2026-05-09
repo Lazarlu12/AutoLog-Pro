@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ────────────────────────────────────────────────
+enum MaintenanceType {
+  OIL_CHANGE
+  BRAKES
+  TIRES
+  BATTERY
+  FILTERS
+  ALIGNMENT
+  INSPECTION
+  INSURANCE
+  OTHER
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  DISMISSED
+}
+
+enum DocumentType {
+  INSURANCE
+  REGISTRATION
+  INSPECTION
+  MANUAL
+  RECEIPT
+  OTHER
+}
+
+// ─── MODELS ───────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique          // ← requerido, no opcional
+  name      String?
+  email     String   @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles Vehicle[]
+}
+
+model Vehicle {
+  id             String   @id @default(cuid())
+  userId         String
+  nickname       String
+  brand          String
+  model          String
+  year           Int
+  licensePlate   String?             // ← sin @unique (patentes se repiten entre países)
+  vin            String?  @unique
+  currentMileage Int      @default(0)
+  imageUrl       String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  maintenanceRecords MaintenanceRecord[]
+  documents          Document[]
+  reminders          Reminder[]
+
+  @@index([userId])
+  @@index([brand, model])
+  @@index([licensePlate])  // índice simple, sin unicidad
+}
+
+model MaintenanceRecord {
+  id             String          @id @default(cuid())
+  vehicleId      String
+  type           MaintenanceType
+  serviceDate    DateTime
+  mileage        Int
+  cost           Decimal?        @db.Decimal(10, 2)
+  provider       String?         // taller o mecánico
+  notes          String?
+  nextDueDate    DateTime?
+  nextDueMileage Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  vehicle   Vehicle    @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  documents Document[]
+  reminders Reminder[]
+
+  @@index([vehicleId])
+  @@index([serviceDate])
+  @@index([nextDueDate])  // ← clave para queries de recordatorios
+  @@index([type])
+}
+
+model Document {
+  id                  String       @id @default(cuid())
+  vehicleId           String
+  maintenanceRecordId String?      // opcional: adjunto a un mantenimiento específico
+  type                DocumentType
+  name                String
+  url                 String       // URL del storage (Supabase Storage / S3)
+  expiresAt           DateTime?    // para seguros, patentes, VTV
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  vehicle           Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  maintenanceRecord MaintenanceRecord? @relation(fields: [maintenanceRecordId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([expiresAt])    // ← para alertar documentos por vencer
+}
+
+model Reminder {
+  id                  String         @id @default(cuid())
+  vehicleId           String
+  maintenanceRecordId String?
+  title               String
+  dueDate             DateTime?
+  dueMileage          Int?
+  status              ReminderStatus @default(PENDING)
+  notifiedAt          DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  vehicle           Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  maintenanceRecord MaintenanceRecord? @relation(fields: [maintenanceRecordId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([dueDate])
+  @@index([status])
+}
