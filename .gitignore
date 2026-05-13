@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.*
+.pnp.js
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -34,8 +35,32 @@ yarn-error.log*
 .env*
 .env.local*
 .prisma.config.ts
+.env.development.local
+.env.test.local
+.env.production.local
 
-# vercel
+# ── Prisma (el cliente generado va a node_modules, no hace falta ignorarlo)
+# La carpeta /prisma/schema.prisma y /prisma/migrations SÍ se suben
+
+# ── Sistema operativo ─────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editores ──────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ── Logs ──────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Misc ──────────────────────────────────────
 .vercel
 
 # typescript
