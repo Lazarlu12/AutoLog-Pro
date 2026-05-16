@@ -1,16 +1,16 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { prisma } from "@/src/lib/prisma"
-import { requireAuth } from "@/src/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { requireAuth } from "@/lib/auth"
 import {
   createMaintenanceSchema,
   updateMaintenanceSchema,
   type CreateMaintenanceInput,
   type UpdateMaintenanceInput,
-} from "@/src/lib/validations/maintenance"
-import { ok, fail, type ActionResult } from "@/src/types/actions"
-import type { SerializableMaintenanceRecord } from "@/src/types/actions"
+} from "@/lib/validations/maintenance"
+import { ok, fail, type ActionResult } from "@/types/actions"
+import type { SerializableMaintenanceRecord } from "@/types/actions"
 
 // ─────────────────────────────────────────────
 // HELPER: convertir Decimal → number para serialización

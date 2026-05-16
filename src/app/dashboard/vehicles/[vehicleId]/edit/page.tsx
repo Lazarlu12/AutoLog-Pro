@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getVehicleById } from "@/actions/vehicles";
 import { PageHeader } from "@/components/ui/page-header";
-import { VehicleForm } from "@/components/forms/VehicleForm";
+import  VehicleForm  from "@/components/forms/VehicleForm";
 import type { Metadata } from "next";
 
 interface EditVehiclePageProps {
@@ -34,7 +34,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
           { label: vehicle.nickname, href: `/dashboard/vehicles/${vehicleId}` },
         ]}
       />
-      <VehicleForm vehicle={vehicle} />
+      <VehicleForm vehicle={vehicle} /> 
     </div>
   );
 }

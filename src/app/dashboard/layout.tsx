@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { getPendingCount } from "@/actions/reminders";
-import { Sidebar } from "@/components/dashboard/SideBar";
+import { Sidebar } from "@/components/dashboard/Sidebar";
 
 /**
  * Dashboard Layout — Server Component.
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
       <Sidebar
         pendingCount={pendingCount}
         user={{
-          name: user.name,
+          name: user.name, //TODO: arregla error
           email: user.email,
           imageUrl: user.imageUrl,
         }}

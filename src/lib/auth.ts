@@ -1,40 +1,55 @@
-import { auth } from "@clerk/nextjs/server"
-import { prisma } from "@/src/lib/prisma"
-import type { User } from "@prisma/client"
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 
-/**
- * Verifica autenticación y retorna el User de nuestra DB.
- * Lanza un error si el usuario no está autenticado o no existe en DB.
- * Úsalo al inicio de cada Server Action protegida.
- */
-export async function requireAuth(): Promise<User> {
-  const { userId: clerkId } = await auth()
+// ─── requireAuth ─────────────────────────────────────────────────────────────
+// 1. Verifica sesión de Clerk → si no hay, redirige a /sign-in
+// 2. Busca el User en la DB por clerkId
+// 3. Si no existe (webhook no disparó en local), lo crea desde los datos de Clerk
+// 4. Garantiza que name siempre es string (nunca null)
 
-  if (!clerkId) {
-    throw new Error("UNAUTHORIZED")
-  }
+export async function requireAuth() {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) redirect("/sign-in");
 
-  const user = await prisma.user.findUnique({
+  // Intento 1: buscar usuario existente en la DB
+  let user = await prisma.user.findUnique({
     where: { clerkId },
-  })
+  });
 
+  // Intento 2: si no existe, crearlo desde Clerk (típico en desarrollo local
+  // donde el webhook de Clerk no tiene una URL pública para disparar)
   if (!user) {
-    // Esto no debería pasar si el webhook de Clerk funciona correctamente.
-    // Si ocurre, significa que el usuario existe en Clerk pero no fue sincronizado a la DB.
-    throw new Error("USER_NOT_FOUND_IN_DB")
+    const clerkUser = await currentUser();
+    if (!clerkUser) redirect("/sign-in");
+
+    const name =
+      [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
+      "Usuario";
+
+    const email =
+      clerkUser.emailAddresses.find(
+        (e) => e.id === clerkUser.primaryEmailAddressId
+      )?.emailAddress ?? "";
+
+    user = await prisma.user.upsert({
+      where: { clerkId },
+      update: {
+        name,
+        email,
+        imageUrl: clerkUser.imageUrl ?? null,
+      },
+      create: {
+        clerkId,
+        name,
+        email,
+        imageUrl: clerkUser.imageUrl ?? null,
+      },
+    });
   }
 
-  return user
-}
-
-/**
- * Versión que NO lanza error — para layouts y componentes opcionales.
- * Retorna null si no hay sesión.
- */
-export async function getAuthUser(): Promise<User | null> {
-  try {
-    return await requireAuth()
-  } catch {
-    return null
-  }
+  return {
+    ...user,
+    name: user.name ?? "Usuario", // garantía extra de non-null
+  };
 }

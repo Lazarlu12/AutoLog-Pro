@@ -263,7 +263,6 @@ export default async function DashboardPage() {
   const recentVehicles = vehicles.slice(0, 4);
 
   // Máximo 5 alertas para el dashboard (mezcla vencidos + próximos)
-  //TODO: resolver errores luego
   const allAlerts = [
     ...expired.map((r) => ({ ...r, alertType: "expired" as const })),
     ...upcoming.map((r) => ({ ...r, alertType: "upcoming" as const })),

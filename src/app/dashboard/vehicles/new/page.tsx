@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/ui/page-header";
-import { VehicleForm } from "@/components/forms/VehicleForm";
+import  VehicleForm  from "@/components/forms/VehicleForm";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Nuevo Vehículo" };
