@@ -31,6 +31,7 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
       // ✅ Orden correcto: vehicleId PRIMERO, formData SEGUNDO
+      // TODO: Resolver error TS2345
       const result = await createMaintenanceRecord(vehicleId, formData);
 
       if (!result.success) {
