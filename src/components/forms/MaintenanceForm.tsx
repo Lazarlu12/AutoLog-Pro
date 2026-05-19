@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface MaintenanceFormProps {
   vehicleId: string;
   currentMileage: number;
@@ -28,10 +26,8 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  async function handleSubmit(formData: FormData) {
+  function handleSubmit(formData: FormData) {
     startTransition(async () => {
-      // ✅ Orden correcto: vehicleId PRIMERO, formData SEGUNDO
-      // TODO: Resolver error TS2345
       const result = await createMaintenanceRecord(vehicleId, formData);
 
       if (!result.success) {
@@ -51,7 +47,6 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className="space-y-4">
-          {/* Tipo de mantenimiento */}
           <div className="space-y-1">
             <Label htmlFor="type">Tipo de servicio *</Label>
             <Select name="type" required>
@@ -68,7 +63,6 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
             </Select>
           </div>
 
-          {/* Fecha y Kilometraje */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="serviceDate">Fecha del servicio *</Label>
@@ -94,30 +88,17 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
             </div>
           </div>
 
-          {/* Costo y Taller */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="cost">Costo</Label>
-              <Input
-                id="cost"
-                name="cost"
-                type="number"
-                placeholder="0.00"
-                min={0}
-                step="0.01"
-              />
+              <Input id="cost" name="cost" type="number" placeholder="0.00" min={0} step="0.01" />
             </div>
             <div className="space-y-1">
               <Label htmlFor="provider">Taller / Proveedor</Label>
-              <Input
-                id="provider"
-                name="provider"
-                placeholder="AutoService Tucumán"
-              />
+              <Input id="provider" name="provider" placeholder="AutoService Tucumán" />
             </div>
           </div>
 
-          {/* Próximo servicio */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="nextDueDate">Próxima fecha</Label>
@@ -125,38 +106,20 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
             </div>
             <div className="space-y-1">
               <Label htmlFor="nextDueMileage">Próximo kilometraje</Label>
-              <Input
-                id="nextDueMileage"
-                name="nextDueMileage"
-                type="number"
-                placeholder="62000"
-                min={0}
-              />
+              <Input id="nextDueMileage" name="nextDueMileage" type="number" placeholder="62000" min={0} />
             </div>
           </div>
 
-          {/* Notas */}
           <div className="space-y-1">
             <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              placeholder="Detalles adicionales del servicio…"
-              rows={3}
-            />
+            <Textarea id="notes" name="notes" placeholder="Detalles adicionales del servicio…" rows={3} />
           </div>
 
-          {/* Acciones */}
           <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Guardando…" : "Registrar mantenimiento"}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              disabled={isPending}
-            >
+            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
               Cancelar
             </Button>
           </div>
