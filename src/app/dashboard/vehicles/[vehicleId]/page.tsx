@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { UploadDocumentForm } from "@/components/forms/UploadDocumentForm";
+import { DeleteDocumentButton } from "@/components/vehicles/DeleteDocumentButton";
 import {
   Wrench,
   FileText,
@@ -123,6 +125,8 @@ function MaintenanceRow({ record }: { record: SerializableMaintenanceRecord }) {
 }
 
 /* ─── Document row ───────────────────────────────────────────────────────── */
+// ↓ Ahora recibe vehicleId para que DeleteDocumentButton pueda hacer refresh
+// sin necesidad de prop-drilling adicional.
 
 function DocumentRow({ doc }: { doc: SerializableDocument }) {
   const isExpiringSoon = doc.expiresAt
@@ -155,6 +159,8 @@ function DocumentRow({ doc }: { doc: SerializableDocument }) {
           {isExpired ? "Vencido" : formatDate(doc.expiresAt)}
         </Badge>
       )}
+      {/* ── Botón eliminar documento ── */}
+      <DeleteDocumentButton documentId={doc.id} documentName={doc.name} />
     </div>
   );
 }
@@ -196,12 +202,12 @@ function ReminderItem({ reminder }: { reminder: ReminderWithVehicle }) {
         variant="outline"
         className={cn(
           "text-[10px] shrink-0",
-          isExpired
-            ? "border-destructive/30 text-destructive bg-destructive/5"
-            : "border-warning/30 text-warning bg-warning/5"
+          isExpired || reminder.status === "SENT"
+            ? "border-warning/30 text-warning bg-warning/5"
+            : "border-border text-muted-foreground"
         )}
       >
-        {isExpired ? "Vencido" : "Próximo"}
+        {isExpired ? "Vencido" : reminder.status === "SENT" ? "Activo" : "Pendiente"}
       </Badge>
     </div>
   );
@@ -223,9 +229,9 @@ export default async function VehicleDetailPage({ params }: VehiclePageProps) {
   if (!vehicleResult.success) notFound();
 
   const vehicle    = vehicleResult.data;
-  const records: SerializableMaintenanceRecord[]   = maintenanceResult.success ? maintenanceResult.data : [];
-  const documents: SerializableDocument[]  = documentsResult.success  ? documentsResult.data  : [];
-  const reminders: ReminderWithVehicle[] = remindersResult.success  ? remindersResult.data  : [];
+  const records: SerializableMaintenanceRecord[]  = maintenanceResult.success ? maintenanceResult.data : [];
+  const documents: SerializableDocument[]         = documentsResult.success   ? documentsResult.data  : [];
+  const reminders: ReminderWithVehicle[]          = remindersResult.success   ? remindersResult.data  : [];
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
@@ -321,7 +327,7 @@ export default async function VehicleDetailPage({ params }: VehiclePageProps) {
         {/* ── Columna lateral (1/3) ─────────────────────────────────── */}
         <div className="space-y-4">
 
-          {/* Documentos */}
+          {/* ── Documentos ── */}
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -341,7 +347,15 @@ export default async function VehicleDetailPage({ params }: VehiclePageProps) {
             </CardContent>
           </Card>
 
-          {/* Notas del vehículo */}
+          {/* ── Subir documento ── */}
+          {/*
+            UploadDocumentForm es un Client Component que vive dentro de
+            este Server Component. Next.js App Router lo permite sin problemas.
+            No necesita onSuccess: al completar llama router.refresh() internamente.
+          */}
+          <UploadDocumentForm vehicleId={vehicleId} />
+
+          {/* ── Notas del vehículo ── */}
           {vehicle.notes && (
             <Card className="bg-card border-border">
               <CardHeader className="pb-3">
