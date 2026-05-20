@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/src/lib/prisma";
-import { requireAuth } from "@/src/lib/auth";
-import { ok, fail } from "@/src/types/actions";
-import type { ActionResult } from "@/src/types/actions";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { ok, fail } from "@/types/actions";
+import type { ActionResult } from "@/types/actions";
 import type { Reminder } from "@prisma/client";
 
 // ---------------------------------------------------------------------------

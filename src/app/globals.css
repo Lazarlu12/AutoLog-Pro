@@ -1,26 +1,174 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
+/* ─── Tailwind v4 + shadcn/ui theme bridge ─────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --radius-sm:   calc(var(--radius) - 4px);
+  --radius-md:   calc(var(--radius) - 2px);
+  --radius-lg:   var(--radius);
+  --radius-xl:   calc(var(--radius) + 4px);
+
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:          var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+  --color-success:            var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning:            var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-outfit);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── AutoLog Pro — "Midnight Precision" Design System ─────────────────── */
+/*
+   Paleta: Zinc oscuro + Ámbar dorado.
+   Inspiración: tablero de instrumentos premium + apps como Linear / Vercel.
+   Modo único: dark (la app no tiene modo claro).
+*/
+:root {
+  --radius: 0.5rem;
+
+  /* Fondos */
+  --background:  #09090b;   /* zinc-950 — fondo base */
+  --card:        #18181b;   /* zinc-900 — superficies elevadas */
+  --popover:     #1c1c1f;   /* popovers y tooltips */
+
+  /* Texto */
+  --foreground:         #fafafa;  /* zinc-50  */
+  --card-foreground:    #fafafa;
+  --popover-foreground: #fafafa;
+
+  /* Primario — Ámbar dorado (el acento de identidad) */
+  --primary:            #f59e0b;  /* amber-500 */
+  --primary-foreground: #09090b;  /* texto sobre botones primarios */
+
+  /* Secundario — superficies sutiles */
+  --secondary:             #27272a;  /* zinc-800 */
+  --secondary-foreground:  #fafafa;
+
+  /* Muted — texto y fondos de baja jerarquía */
+  --muted:            #27272a;
+  --muted-foreground: #71717a;   /* zinc-500 */
+
+  /* Accent — hover states, selected items */
+  --accent:            #292524;   /* stone-800, cálido */
+  --accent-foreground: #fafafa;
+
+  /* Semánticos */
+  --destructive:            #ef4444;  /* red-500 */
+  --destructive-foreground: #fafafa;
+  --success:                #22c55e;  /* green-500 */
+  --success-foreground:     #09090b;
+  --warning:                #f59e0b;
+  --warning-foreground:     #09090b;
+
+  /* Bordes e inputs */
+  --border: #27272a;   /* zinc-800 */
+  --input:  #27272a;
+  --ring:   #f59e0b;   /* focus ring = ámbar */
+}
+
+/* ─── Base styles ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar personalizado ───────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #3f3f46; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+/* ─── Tipografía display ────────────────────────────────────────────────── */
+.font-display {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+}
+
+/* ─── Animaciones globales ──────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+/* Staggered children — aplicar .stagger al padre */
+.stagger > *:nth-child(1) { animation-delay: 0ms;   }
+.stagger > *:nth-child(2) { animation-delay: 60ms;  }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+.stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ─── Utilidades custom ─────────────────────────────────────────────────── */
+
+/* Gradiente ámbar sutil para cards destacadas */
+.gradient-amber-subtle {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.06) 0%,
+    rgba(245, 158, 11, 0.02) 100%
+  );
+}
+
+/* Borde ámbar con glow */
+.border-amber-glow {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.08);
+}
+
+/* Superficie con borde sutil */
+.surface {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Focus ring consistente */
+.focus-ring {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/src/lib/prisma";
-import { supabase, STORAGE_BUCKET } from "@/src/lib/supabase";
-import { requireAuth } from "@/src/lib/auth";
-import { uploadDocumentSchema, validateFile } from "@/src/lib/validations/document";
-import { ok, fail } from "@/src/types/actions";
-import type { ActionResult } from "@/src/types/actions";
+import { prisma } from "@/lib/prisma";
+import { supabase, STORAGE_BUCKET } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
+import { uploadDocumentSchema, validateFile } from "@/lib/validations/document";
+import { ok, fail } from "@/types/actions";
+import type { ActionResult } from "@/types/actions";
 import type { Document } from "@prisma/client";
 
 // ---------------------------------------------------------------------------

@@ -1,213 +1,133 @@
-"use server"
+"use server";
 
-import { revalidatePath } from "next/cache"
-import { Prisma } from "@prisma/client"
-import { prisma } from "@/src/lib/prisma"
-import { requireAuth } from "@/src/lib/auth"
-import {
-  createVehicleSchema,
-  updateVehicleSchema,
-  type CreateVehicleInput,
-  type UpdateVehicleInput,
-} from "@/src/lib/validations/vehicle"
-import { ok, fail, type ActionResult } from "@/src/types/actions"
-import type { Vehicle } from "@prisma/client"
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { createVehicleSchema } from "@/lib/validations/vehicle";
+import { ok, fail } from "@/types/actions";
+import type { ActionResult } from "@/types/actions";
+import type { SerializableVehicle } from "@/types/domain";
+import type { Vehicle } from "@prisma/client";
 
-// ─────────────────────────────────────────────
-// HELPER INTERNO: ownership check
-// ─────────────────────────────────────────────
+// ─── Helper de serialización ─────────────────────────────────────────────────
+// Convierte los campos Date de Prisma a string ISO antes de enviar al cliente.
 
-async function getOwnedVehicle(
-  vehicleId: string,
-  dbUserId: string
-): Promise<Vehicle | null> {
-  return prisma.vehicle.findFirst({
-    where: {
-      id: vehicleId,
-      userId: dbUserId,
-    },
-  })
+function serializeVehicle(v: Vehicle): SerializableVehicle {
+  return {
+    id:             v.id,
+    userId:         v.userId,
+    nickname:       v.nickname,
+    brand:          v.brand,
+    model:          v.model,
+    year:           v.year,
+    licensePlate:   v.licensePlate,
+    vin:            v.vin,
+    currentMileage: v.currentMileage,
+    imageUrl:       v.imageUrl,
+    notes:          v.notes,
+    createdAt:      v.createdAt.toISOString(), // ✅ Date → string
+    updatedAt:      v.updatedAt.toISOString(), // ✅ Date → string
+  };
 }
 
-// ─────────────────────────────────────────────
-// HELPER INTERNO: detectar error de VIN duplicado
-// ─────────────────────────────────────────────
+// ─── Actions ─────────────────────────────────────────────────────────────────
 
-/**
- * El VIN tiene @unique global en el schema.
- * Prisma lanza un P2002 si se intenta insertar/actualizar con un VIN ya existente.
- * Lo atrapamos acá para devolver un mensaje legible en lugar de un error genérico.
- */
-function isVinUniqueError(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002" &&
-    Array.isArray(error.meta?.target) &&
-    (error.meta.target as string[]).includes("vin")
-  )
-}
-
-// ─────────────────────────────────────────────
-// 1. CREATE VEHICLE
-// ─────────────────────────────────────────────
-
-export async function createVehicle(
-  input: CreateVehicleInput
-): Promise<ActionResult<Vehicle>> {
+export async function getVehiclesByUser(): Promise<ActionResult<SerializableVehicle[]>> {
   try {
-    const dbUser = await requireAuth()
-
-    const parsed = createVehicleSchema.safeParse(input)
-    if (!parsed.success) {
-      return fail("Datos inválidos", parsed.error.flatten().fieldErrors)
-    }
-
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        ...parsed.data,
-        // Normalizar strings vacíos a null para campos opcionales de DB
-        vin: parsed.data.vin || null,
-        licensePlate: parsed.data.licensePlate || null,
-        imageUrl: parsed.data.imageUrl || null,
-        notes: parsed.data.notes || null,
-        userId: dbUser.id,
-      },
-    })
-
-    revalidatePath("/dashboard/vehicles")
-
-    return ok(vehicle)
-  } catch (error) {
-    if (isVinUniqueError(error)) {
-      return fail("Ese VIN ya está registrado en el sistema")
-    }
-    console.error("[createVehicle]", error)
-    return fail("Error interno al crear el vehículo")
-  }
-}
-
-// ─────────────────────────────────────────────
-// 2. GET ALL VEHICLES
-// ─────────────────────────────────────────────
-
-export async function getVehiclesByUser(): Promise<ActionResult<Vehicle[]>> {
-  try {
-    const dbUser = await requireAuth()
-
+    const user = await requireAuth();
     const vehicles = await prisma.vehicle.findMany({
-      where: { userId: dbUser.id },
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
-    })
-
-    return ok(vehicles)
+    });
+    return ok(vehicles.map(serializeVehicle));
   } catch (error) {
-    console.error("[getVehiclesByUser]", error)
-    return fail("Error al obtener los vehículos")
+    console.error("[getVehiclesByUser]", error);
+    return fail("Error al obtener vehículos");
   }
 }
-
-// ─────────────────────────────────────────────
-// 3. GET VEHICLE BY ID + ownership check
-// ─────────────────────────────────────────────
 
 export async function getVehicleById(
   vehicleId: string
-): Promise<ActionResult<Vehicle>> {
+): Promise<ActionResult<SerializableVehicle>> {
   try {
-    if (!vehicleId) return fail("ID de vehículo requerido")
-
-    const dbUser = await requireAuth()
-
-    const vehicle = await getOwnedVehicle(vehicleId, dbUser.id)
-    if (!vehicle) return fail("Vehículo no encontrado")
-
-    return ok(vehicle)
+    const user = await requireAuth();
+    // Ownership check via JOIN, nunca en memoria
+    const vehicle = await prisma.vehicle.findFirst({
+      where: { id: vehicleId, userId: user.id },
+    });
+    if (!vehicle) return fail("Vehículo no encontrado");
+    return ok(serializeVehicle(vehicle));
   } catch (error) {
-    console.error("[getVehicleById]", error)
-    return fail("Error al obtener el vehículo")
+    console.error("[getVehicleById]", error);
+    return fail("Error al obtener el vehículo");
   }
 }
 
-// ─────────────────────────────────────────────
-// 4. UPDATE VEHICLE + ownership check
-// ─────────────────────────────────────────────
+export async function createVehicle(
+  formData: FormData
+): Promise<ActionResult<SerializableVehicle>> {
+  try {
+    const user = await requireAuth();
+    const raw = Object.fromEntries(formData.entries());
+    const parsed = createVehicleSchema.safeParse(raw);
+
+    if (!parsed.success) {
+      return fail("Datos inválidos", parsed.error.flatten().fieldErrors as Record<string, string[]>);
+    }
+
+    const vehicle = await prisma.vehicle.create({
+      data: { ...parsed.data, userId: user.id },
+    });
+    return ok(serializeVehicle(vehicle));
+  } catch (error) {
+    console.error("[createVehicle]", error);
+    return fail("Error al crear el vehículo");
+  }
+}
 
 export async function updateVehicle(
   vehicleId: string,
-  input: UpdateVehicleInput
-): Promise<ActionResult<Vehicle>> {
+  formData: FormData
+): Promise<ActionResult<SerializableVehicle>> {
   try {
-    if (!vehicleId) return fail("ID de vehículo requerido")
+    const user = await requireAuth();
+    // Ownership check via JOIN
+    const existing = await prisma.vehicle.findFirst({
+      where: { id: vehicleId, userId: user.id },
+    });
+    if (!existing) return fail("Vehículo no encontrado");
 
-    const dbUser = await requireAuth()
+    const raw = Object.fromEntries(formData.entries());
+    const parsed = createVehicleSchema.safeParse(raw);
 
-    const parsed = updateVehicleSchema.safeParse(input)
     if (!parsed.success) {
-      return fail("Datos inválidos", parsed.error.flatten().fieldErrors)
+      return fail("Datos inválidos", parsed.error.flatten().fieldErrors as Record<string, string[]>);
     }
 
-    // Ownership check antes de cualquier escritura
-    const existing = await getOwnedVehicle(vehicleId, dbUser.id)
-    if (!existing) return fail("Vehículo no encontrado")
-
-    const updated = await prisma.vehicle.update({
+    const vehicle = await prisma.vehicle.update({
       where: { id: vehicleId },
-      data: {
-        ...parsed.data,
-        // Normalizar strings vacíos a null
-        vin: parsed.data.vin !== undefined
-          ? (parsed.data.vin || null)
-          : undefined,
-        licensePlate: parsed.data.licensePlate !== undefined
-          ? (parsed.data.licensePlate || null)
-          : undefined,
-        imageUrl: parsed.data.imageUrl !== undefined
-          ? (parsed.data.imageUrl || null)
-          : undefined,
-        notes: parsed.data.notes !== undefined
-          ? (parsed.data.notes || null)
-          : undefined,
-      },
-    })
-
-    revalidatePath("/dashboard/vehicles")
-    revalidatePath(`/dashboard/vehicles/${vehicleId}`)
-
-    return ok(updated)
+      data: parsed.data,
+    });
+    return ok(serializeVehicle(vehicle));
   } catch (error) {
-    if (isVinUniqueError(error)) {
-      return fail("Ese VIN ya está registrado en el sistema")
-    }
-    console.error("[updateVehicle]", error)
-    return fail("Error al actualizar el vehículo")
+    console.error("[updateVehicle]", error);
+    return fail("Error al actualizar el vehículo");
   }
 }
 
-// ─────────────────────────────────────────────
-// 5. DELETE VEHICLE + ownership check
-// ─────────────────────────────────────────────
-
 export async function deleteVehicle(
   vehicleId: string
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ deleted: boolean }>> {
   try {
-    if (!vehicleId) return fail("ID de vehículo requerido")
+    const user = await requireAuth();
+    const existing = await prisma.vehicle.findFirst({
+      where: { id: vehicleId, userId: user.id },
+    });
+    if (!existing) return fail("Vehículo no encontrado");
 
-    const dbUser = await requireAuth()
-
-    const existing = await getOwnedVehicle(vehicleId, dbUser.id)
-    if (!existing) return fail("Vehículo no encontrado")
-
-    // onDelete: Cascade ya está en el schema para MaintenanceRecord, Document y Reminder
-    await prisma.vehicle.delete({
-      where: { id: vehicleId },
-    })
-
-    revalidatePath("/dashboard/vehicles")
-
-    return ok({ id: vehicleId })
+    await prisma.vehicle.delete({ where: { id: vehicleId } });
+    return ok({ deleted: true });
   } catch (error) {
-    console.error("[deleteVehicle]", error)
-    return fail("Error al eliminar el vehículo")
+    console.error("[deleteVehicle]", error);
+    return fail("Error al eliminar el vehículo");
   }
 }
