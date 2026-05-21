@@ -2,8 +2,8 @@ import Link from "next/link";
 import { getVehiclesByUser } from "@/actions/vehicles";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { VehicleFilters } from "@/components/dashboard/VehicleFilters";
 import {
   Car,
   Plus,
@@ -17,13 +17,9 @@ import type { SerializableVehicle } from "@/types/domain";
 
 export const metadata: Metadata = { title: "Mis Vehículos" };
 
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
-
 function formatMileage(km: number): string {
   return km.toLocaleString("es-AR") + " km";
 }
-
-/* ─── Vehicle card ───────────────────────────────────────────────────────── */
 
 function VehicleCard({ vehicle }: { vehicle: SerializableVehicle }) {
   return (
@@ -58,7 +54,7 @@ function VehicleCard({ vehicle }: { vehicle: SerializableVehicle }) {
             {vehicle.licensePlate && (
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Hash className="w-3.5 h-3.5" />
-                {vehicle.licensePlate}
+                {vehicle.licensePlate.toUpperCase()}
               </span>
             )}
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground ml-auto">
@@ -73,35 +69,39 @@ function VehicleCard({ vehicle }: { vehicle: SerializableVehicle }) {
   );
 }
 
-/* ─── Empty state ────────────────────────────────────────────────────────── */
+export default async function VehiclesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; sort?: string }>;
+}) {
+  const resolvedParams = await searchParams;
+  const query = resolvedParams.q?.toLowerCase() || "";
+  const sort = resolvedParams.sort || "newest";
 
-function EmptyState() {
-  return (
-    <div className="col-span-full py-16 flex flex-col items-center gap-4 text-center">
-      <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center">
-        <Car className="w-7 h-7 text-muted-foreground" />
-      </div>
-      <div>
-        <p className="font-display font-semibold text-foreground">Sin vehículos todavía</p>
-        <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-          Agregá tu primer vehículo para empezar a registrar su historial de mantenimiento.
-        </p>
-      </div>
-      <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
-        <Link href="/dashboard/vehicles/new">
-          <Plus className="w-3.5 h-3.5 mr-1.5" />
-          Agregar vehículo
-        </Link>
-      </Button>
-    </div>
-  );
-}
-
-/* ─── Page ───────────────────────────────────────────────────────────────── */
-
-export default async function VehiclesPage() {
   const result = await getVehiclesByUser();
-  const vehicles: SerializableVehicle[] = result.success ? result.data : [];
+  let vehicles: SerializableVehicle[] = result.success ? result.data : [];
+
+  // Filtrado reactivo en el servidor
+  if (query) {
+    vehicles = vehicles.filter(
+      (v) =>
+        v.brand.toLowerCase().includes(query) ||
+        v.model.toLowerCase().includes(query) ||
+        v.nickname?.toLowerCase().includes(query) ||
+        v.licensePlate?.toLowerCase().includes(query)
+    );
+  }
+
+  // Ordenamiento dinámico
+  if (sort === "mileage-desc") {
+    vehicles.sort((a, b) => b.currentMileage - a.currentMileage);
+  } else if (sort === "mileage-asc") {
+    vehicles.sort((a, b) => a.currentMileage - b.currentMileage);
+  } else if (sort === "year-desc") {
+    vehicles.sort((a, b) => b.year - a.year);
+  } else if (sort === "year-asc") {
+    vehicles.sort((a, b) => a.year - b.year);
+  }
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
@@ -119,9 +119,19 @@ export default async function VehiclesPage() {
         }}
       />
 
+      <VehicleFilters />
+
       {vehicles.length === 0 ? (
-        <div className="grid">
-          <EmptyState />
+        <div className="col-span-full py-16 flex flex-col items-center gap-4 text-center border border-dashed border-border rounded-xl bg-card/30">
+          <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center">
+            <Car className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="font-display font-semibold text-foreground">No se encontraron vehículos</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+              {query ? "Probá modificando los términos del buscador." : "Comenzá agregando un vehículo."}
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger">

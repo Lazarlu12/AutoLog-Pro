@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner"; // 1. Importamos Toaster
+import { ThemeProvider } from "@/components/theme-provider";
 
 /* ─── Fuentes ───────────────────────────────────────────────────────────── */
 
@@ -43,28 +44,26 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="es"
-        className={`
-          ${geistSans.variable}
-          ${geistMono.variable}
-          ${outfit.variable}
-          dark h-full antialiased
-        `}
+        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col bg-background text-foreground">
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
-          
+
           {/* 2. Agregamos el componente Toaster personalizado */}
           <Toaster
             position="bottom-right"
             theme="dark"
             toastOptions={{
               style: {
-                background: "hsl(240 5% 10%)",   // zinc-950
+                background: "hsl(240 5% 10%)", // zinc-950
                 border: "1px solid hsl(240 4% 16%)", // zinc-800
-                color: "hsl(240 5% 84%)",          // zinc-300
+                color: "hsl(240 5% 84%)", // zinc-300
               },
             }}
           />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
