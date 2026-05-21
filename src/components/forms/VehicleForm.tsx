@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface VehicleFormProps {
@@ -45,7 +46,6 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
 
   async function handleSubmit(formData: FormData) {
     clearErrors();
-
     startTransition(async () => {
       const result = isEditing
         ? await updateVehicle(vehicle.id, formData)
@@ -54,11 +54,23 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
       if (!result.success) {
         setGeneralError(result.error);
         setFieldErrors(result.fieldErrors ?? {});
+        
+        // Toast opcional para errores generales (de red o servidor)
+        if (!result.fieldErrors) {
+          toast.error(result.error || "Ocurrió un error inesperado");
+        }
         return;
       }
 
+      // Toast de éxito dependiendo si estamos creando o editando
+      if (isEditing) {
+        toast.success("Cambios guardados");
+      } else {
+        toast.success("Vehículo agregado correctamente");
+      }
+
       router.push(`/dashboard/vehicles/${result.data.id}`);
-      router.refresh();
+      // Nota: Eliminamos router.refresh() porque router.push ya hace el trabajo
     });
   }
 

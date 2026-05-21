@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { uploadDocument } from "@/actions/documents";
 import { DOCUMENT_TYPE_LABELS } from "@/types/domain";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +69,6 @@ export function UploadDocumentForm({
 
   function handleSubmit(formData: FormData) {
     clearErrors();
-
     // Inyectar el vehicleId y maintenanceRecordId que no están en el form HTML
     formData.set("vehicleId", vehicleId);
     if (maintenanceRecordId) formData.set("maintenanceRecordId", maintenanceRecordId);
@@ -79,12 +79,19 @@ export function UploadDocumentForm({
       if (!result.success) {
         setGeneralError(result.error);
         setFieldErrors(result.fieldErrors ?? {});
+        
+        if (!result.fieldErrors) {
+          toast.error(result.error || "Ocurrió un error inesperado");
+        }
         return;
       }
 
       // Limpiar formulario
       formRef.current?.reset();
       setSelectedFile(null);
+
+      // Toast de éxito
+      toast.success("Documento subido correctamente");
 
       if (onSuccess) {
         onSuccess();
