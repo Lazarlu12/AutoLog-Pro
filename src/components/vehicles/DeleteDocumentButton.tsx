@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteDocument } from "@/actions/documents";
+import { toast } from "sonner"; // Importamos toast
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,27 +18,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
 interface DeleteDocumentButtonProps {
   documentId: string;
   documentName: string;
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
 export function DeleteDocumentButton({ documentId, documentName }: DeleteDocumentButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   function handleDelete() {
+    setError(null);
     startTransition(async () => {
       const result = await deleteDocument(documentId);
 
       if (!result.success) {
         setError(result.error);
+        toast.error(result.error || "No se pudo eliminar el documento");
         return;
       }
 
+      // Toast de éxito y refrescar la página actual
+      toast.success("Documento eliminado correctamente");
       router.refresh();
     });
   }

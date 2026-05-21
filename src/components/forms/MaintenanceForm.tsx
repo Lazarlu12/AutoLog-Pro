@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createMaintenanceRecord } from "@/actions/maintenance";
 import { MAINTENANCE_TYPE_LABELS } from "@/types/domain";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,18 +52,24 @@ export function MaintenanceForm({ vehicleId, currentMileage }: MaintenanceFormPr
 
   function handleSubmit(formData: FormData) {
     clearErrors();
-
     startTransition(async () => {
       const result = await createMaintenanceRecord(vehicleId, formData);
 
       if (!result.success) {
         setGeneralError(result.error);
         setFieldErrors(result.fieldErrors ?? {});
+        
+        if (!result.fieldErrors) {
+          toast.error(result.error || "Ocurrió un error inesperado");
+        }
         return;
       }
 
+      // Toast de éxito
+      toast.success("Mantenimiento registrado");
+
       router.push(`/dashboard/vehicles/${vehicleId}`);
-      router.refresh();
+      // Eliminamos router.refresh()
     });
   }
 

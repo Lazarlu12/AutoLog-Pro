@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner"; // 1. Importamos Toaster
 
 /* ─── Fuentes ───────────────────────────────────────────────────────────── */
 
@@ -15,10 +16,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/**
- * Outfit — fuente display para headings.
- * Geométrica, moderna, con personalidad propia. Distinta a Geist sin chocar.
- */
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
@@ -46,8 +43,6 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="es"
-        // "dark" forzado — AutoLog Pro es dark-only.
-        // Esto activa las CSS variables de shadcn/ui para dark mode.
         className={`
           ${geistSans.variable}
           ${geistMono.variable}
@@ -57,6 +52,19 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col bg-background text-foreground">
           {children}
+          
+          {/* 2. Agregamos el componente Toaster personalizado */}
+          <Toaster
+            position="bottom-right"
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "hsl(240 5% 10%)",   // zinc-950
+                border: "1px solid hsl(240 4% 16%)", // zinc-800
+                color: "hsl(240 5% 84%)",          // zinc-300
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

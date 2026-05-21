@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteVehicle } from "@/actions/vehicles";
+import { toast } from "sonner"; // Importamos toast
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,29 +18,30 @@ import {
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
 interface DeleteVehicleButtonProps {
   vehicleId: string;
-  vehicleName: string; // para mostrar en el mensaje de confirmación
+  vehicleName: string;
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
 export function DeleteVehicleButton({ vehicleId, vehicleName }: DeleteVehicleButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   function handleDelete() {
+    setError(null); // Limpiamos errores previos si los hubiera
     startTransition(async () => {
       const result = await deleteVehicle(vehicleId);
 
       if (!result.success) {
         setError(result.error);
+        toast.error(result.error || "No se pudo eliminar el vehículo");
         return;
       }
 
+      // Toast de éxito e ir a la lista general
+      toast.success(`${vehicleName} eliminado correctamente`);
       router.push("/dashboard/vehicles");
-      router.refresh();
     });
   }
 
@@ -74,7 +76,6 @@ export function DeleteVehicleButton({ vehicleId, vehicleName }: DeleteVehicleBut
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Error inline si la acción falla */}
       {error && (
         <p className="text-sm text-red-400">{error}</p>
       )}
