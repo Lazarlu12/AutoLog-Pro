@@ -38,7 +38,6 @@ const navItems = [
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    // exact: solo activo si la ruta ES exactamente /dashboard
     exact: true,
   },
   {
@@ -52,7 +51,7 @@ const navItems = [
     label: "Recordatorios",
     icon: Bell,
     exact: false,
-    badge: true, // muestra el contador de pendientes
+    badge: true,
   },
 ] as const;
 
@@ -61,7 +60,6 @@ const navItems = [
 function Logo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2.5 group">
-      {/* Ícono hexagonal estilo tablero de instrumentos */}
       <div className="relative w-8 h-8 flex items-center justify-center">
         <div className="absolute inset-0 bg-primary/20 rounded-lg rotate-45 group-hover:bg-primary/30 transition-colors" />
         <Car className="relative w-4 h-4 text-primary" strokeWidth={2.5} />
@@ -106,7 +104,6 @@ function NavItem({
           : "text-muted-foreground hover:text-foreground hover:bg-secondary"
       )}
     >
-      {/* Indicador lateral activo */}
       {isActive && (
         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r-full" />
       )}
@@ -121,7 +118,6 @@ function NavItem({
 
       <span className="flex-1">{item.label}</span>
 
-      {/* Badge de recordatorios pendientes */}
       {"badge" in item && item.badge && pendingCount > 0 && (
         <Badge
           variant="default"
@@ -146,25 +142,24 @@ function SidebarContent({
   onNavClick,
 }: SidebarProps & { onNavClick?: () => void }) {
   const { signOut } = useClerk();
-
-  // Iniciales para el avatar fallback
+  
   const initials = user.name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "US";
 
   return (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="px-4 py-5">
         <Logo />
       </div>
 
       <Separator className="bg-border/60" />
 
-      {/* Navegación principal */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => (
           <NavItem
@@ -178,17 +173,16 @@ function SidebarContent({
 
       <Separator className="bg-border/60" />
 
-      {/* Usuario y logout */}
       <div className="px-3 py-4">
         <div className="flex items-center gap-3 px-2 py-2 rounded-md group">
           <Avatar className="w-8 h-8 border border-border">
-            <AvatarImage src={user.imageUrl ?? undefined} alt={user.name} />
+            <AvatarImage src={user.imageUrl ?? undefined} alt={user.name || "Usuario"} />
             <AvatarFallback className="bg-secondary text-xs font-semibold text-foreground">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+            <p className="text-sm font-medium text-foreground truncate">{user.name || "Usuario"}</p>
             <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
           </div>
           <Button

@@ -5,12 +5,11 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 
 /**
  * Dashboard Layout — Server Component.
- *
  * Responsabilidades:
- *  1. Verificar autenticación (requireAuth redirige si no hay sesión)
- *  2. Obtener datos del usuario y contador de recordatorios pendientes
- *  3. Pasarlos al Sidebar (Client Component) vía props
- *  4. Renderizar el shell: sidebar + área principal
+ * 1. Verificar autenticación (requireAuth redirige si no hay sesión)
+ * 2. Obtener datos del usuario y contador de recordatorios pendientes
+ * 3. Pasarlos al Sidebar (Client Component) vía props
+ * 4. Renderizar el shell: sidebar + área principal
  */
 export default async function DashboardLayout({
   children,
@@ -19,7 +18,8 @@ export default async function DashboardLayout({
 }) {
   // Si no hay sesión, requireAuth redirige al sign-in automáticamente
   const user = await requireAuth();
-
+  
+  // Obtiene la cantidad de recordatorios pendientes del usuario
   const countResult = await getPendingCount();
   const pendingCount = countResult.success ? countResult.data.count : 0;
 
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
       <Sidebar
         pendingCount={pendingCount}
         user={{
-          name: user.name, //TODO: arregla error
+          name: user.name, 
           email: user.email,
           imageUrl: user.imageUrl,
         }}

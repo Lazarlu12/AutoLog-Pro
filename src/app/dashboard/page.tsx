@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { getVehiclesByUser } from "@/actions/vehicles";
 import { getExpired, getUpcoming } from "@/actions/reminders";
+import { currentUser } from "@clerk/nextjs/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,9 +27,10 @@ export const metadata: Metadata = {
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
 
-function getGreeting(name: string): { greeting: string; sub: string } {
+function getGreeting(name: string | null | undefined): { greeting: string; sub: string } {
   const hour = new Date().getHours();
-  const firstName = name.split(" ")[0];
+  // Si no hay nombre configurado, usamos "piloto" como fallback amigable
+  const firstName = name && name.trim() !== "" ? name.split(" ")[0] : "piloto";
 
   if (hour < 12) return { greeting: `Buenos días, ${firstName}`, sub: "Revisá el estado de tus vehículos." };
   if (hour < 18) return { greeting: `Buenas tardes, ${firstName}`, sub: "Todo bajo control por acá." };
@@ -245,9 +247,12 @@ function EmptyVehicles() {
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default async function DashboardPage() {
-  // Fetch en paralelo — más rápido que secuencial
-  const [user, vehiclesResult, expiredResult, upcomingResult] = await Promise.all([
-    requireAuth(),
+  // Obtenemos el perfil completo directamente desde Clerk
+  const clerkUser = await currentUser();
+  const displayName = clerkUser?.firstName;
+
+  // Fetch en paralelo de los datos
+  const [vehiclesResult, expiredResult, upcomingResult] = await Promise.all([
     getVehiclesByUser(),
     getExpired(),
     getUpcoming(),
@@ -257,7 +262,9 @@ export default async function DashboardPage() {
   const expired  = expiredResult.success  ? expiredResult.data  : [];
   const upcoming = upcomingResult.success ? upcomingResult.data : [];
 
-  const { greeting, sub } = getGreeting(user.name);
+  // Pasamos el nombre extraído de Clerk al saludo
+  const { greeting, sub } = getGreeting(displayName);
+
 
   // Últimos 4 vehículos para la preview
   const recentVehicles = vehicles.slice(0, 4);

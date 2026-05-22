@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Toaster } from "sonner"; // 1. Importamos Toaster
-import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 
 /* ─── Fuentes ───────────────────────────────────────────────────────────── */
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -24,7 +22,6 @@ const outfit = Outfit({
 });
 
 /* ─── Metadata ──────────────────────────────────────────────────────────── */
-
 export const metadata: Metadata = {
   title: {
     default: "AutoLog Pro",
@@ -33,8 +30,7 @@ export const metadata: Metadata = {
   description: "Control inteligente del mantenimiento de tus vehículos.",
 };
 
-/* ─── Layout ────────────────────────────────────────────────────────────── */
-
+/* ─── Layout Raíz ────────────────────────────────────────────────────────── */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,26 +40,28 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="es"
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
+        className={`
+          ${geistSans.variable}
+          ${geistMono.variable}
+          ${outfit.variable}
+          dark h-full antialiased
+        `}
       >
         <body className="min-h-full flex flex-col bg-background text-foreground">
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
-
-          {/* 2. Agregamos el componente Toaster personalizado */}
+          
+          {/* Componente Toaster para notificaciones globales */}
           <Toaster
             position="bottom-right"
             theme="dark"
             toastOptions={{
               style: {
-                background: "hsl(240 5% 10%)", // zinc-950
+                background: "hsl(240 5% 10%)",     // zinc-950
                 border: "1px solid hsl(240 4% 16%)", // zinc-800
-                color: "hsl(240 5% 84%)", // zinc-300
+                color: "hsl(240 5% 84%)",            // zinc-300
               },
             }}
           />
-          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
