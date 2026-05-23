@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { getVehiclesByUser } from "@/actions/vehicles";
 import { getExpired, getUpcoming } from "@/actions/reminders";
+import { resetDemoData } from "@/actions/demo"; // <--- IMPORTACIÓN
 import { currentUser } from "@clerk/nextjs/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,14 +28,27 @@ export const metadata: Metadata = {
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
 
-function getGreeting(name: string | null | undefined): { greeting: string; sub: string } {
+function getGreeting(name: string | null | undefined): {
+  greeting: string;
+  sub: string;
+} {
   const hour = new Date().getHours();
-  // Si no hay nombre configurado, usamos "piloto" como fallback amigable
-  const firstName = name && name.trim() !== "" ? name.split(" ")[0] : "piloto";
+  const firstName = name && name.trim() !== "" ? name.split(" ")[0] : null;
 
-  if (hour < 12) return { greeting: `Buenos días, ${firstName}`, sub: "Revisá el estado de tus vehículos." };
-  if (hour < 18) return { greeting: `Buenas tardes, ${firstName}`, sub: "Todo bajo control por acá." };
-  return { greeting: `Buenas noches, ${firstName}`, sub: "Un vistazo rápido antes de cerrar." };
+  const time =
+    hour < 12 ? "Buenos días" :
+    hour < 18 ? "Buenas tardes" :
+    "Buenas noches";
+
+  const subByHour =
+    hour < 12 ? "Revisá el estado de tus vehículos." :
+    hour < 18 ? "Todo bajo control por acá." :
+    "Un vistazo rápido antes de cerrar.";
+
+  return {
+    greeting: firstName ? `${time}, ${firstName}` : time,
+    sub: subByHour,
+  };
 }
 
 function formatMileage(km: number): string {
@@ -67,15 +81,15 @@ function StatCard({
   const variantStyles = {
     default: "text-foreground",
     warning: "text-warning",
-    danger:  "text-destructive",
-    amber:   "text-primary",
+    danger: "text-destructive",
+    amber: "text-primary",
   };
 
   const iconBg = {
     default: "bg-secondary",
     warning: "bg-warning/10",
-    danger:  "bg-destructive/10",
-    amber:   "bg-primary/10",
+    danger: "bg-destructive/10",
+    amber: "bg-primary/10",
   };
 
   const card = (
@@ -86,12 +100,20 @@ function StatCard({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {label}
             </p>
-            <p className={cn("text-3xl font-display font-bold", variantStyles[variant])}>
+            <p
+              className={cn(
+                "text-3xl font-display font-bold",
+                variantStyles[variant],
+              )}
+            >
               {value}
             </p>
           </div>
           <div className={cn("p-2.5 rounded-lg", iconBg[variant])}>
-            <Icon className={cn("w-5 h-5", variantStyles[variant])} strokeWidth={2} />
+            <Icon
+              className={cn("w-5 h-5", variantStyles[variant])}
+              strokeWidth={2}
+            />
           </div>
         </div>
       </CardContent>
@@ -172,7 +194,7 @@ function ReminderItem({
       <div
         className={cn(
           "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-          type === "expired" ? "bg-destructive/10" : "bg-warning/10"
+          type === "expired" ? "bg-destructive/10" : "bg-warning/10",
         )}
       >
         {type === "expired" ? (
@@ -184,7 +206,8 @@ function ReminderItem({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">{reminder.title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {reminder.vehicle.nickname} · {reminder.vehicle.brand} {reminder.vehicle.model}
+          {reminder.vehicle.nickname} · {reminder.vehicle.brand}{" "}
+          {reminder.vehicle.model}
         </p>
         <div className="flex items-center gap-3 mt-1.5">
           {reminder.dueDate && (
@@ -207,7 +230,7 @@ function ReminderItem({
           "text-[10px] shrink-0",
           type === "expired"
             ? "border-destructive/30 text-destructive bg-destructive/5"
-            : "border-warning/30 text-warning bg-warning/5"
+            : "border-warning/30 text-warning bg-warning/5",
         )}
       >
         {type === "expired" ? "Vencido" : "Próximo"}
@@ -227,12 +250,19 @@ function EmptyVehicles() {
             <Car className="w-6 h-6 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Sin vehículos todavía</p>
+            <p className="text-sm font-medium text-foreground">
+              Sin vehículos todavía
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Agregá tu primer vehículo para empezar a registrar su mantenimiento.
+              Agregá tu primer vehículo para empezar a registrar su
+              mantenimiento.
             </p>
           </div>
-          <Button asChild size="sm" className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button
+            asChild
+            size="sm"
+            className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
             <Link href="/dashboard/vehicles/new">
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Agregar vehículo
@@ -249,6 +279,17 @@ function EmptyVehicles() {
 export default async function DashboardPage() {
   // Obtenemos el perfil completo directamente desde Clerk
   const clerkUser = await currentUser();
+
+  const userEmail = clerkUser?.emailAddresses[0]?.emailAddress;
+
+  // Log rápido para descartar errores de dedo
+  console.log("DEBUG: Usuario intentando entrar:", userEmail);
+
+  if (userEmail === "reclutadores9autolog@gmail.com") {
+    console.log("DEBUG: Reseteando datos demo...");
+    await resetDemoData();
+  }
+
   const displayName = clerkUser?.firstName;
 
   // Fetch en paralelo de los datos
@@ -259,12 +300,11 @@ export default async function DashboardPage() {
   ]);
 
   const vehicles = vehiclesResult.success ? vehiclesResult.data : [];
-  const expired  = expiredResult.success  ? expiredResult.data  : [];
+  const expired = expiredResult.success ? expiredResult.data : [];
   const upcoming = upcomingResult.success ? upcomingResult.data : [];
 
   // Pasamos el nombre extraído de Clerk al saludo
   const { greeting, sub } = getGreeting(displayName);
-
 
   // Últimos 4 vehículos para la preview
   const recentVehicles = vehicles.slice(0, 4);
@@ -277,7 +317,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -339,7 +378,12 @@ export default async function DashboardPage() {
             </h2>
           </div>
           {vehicles.length > 4 && (
-            <Button variant="ghost" size="sm" asChild className="text-xs text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-xs text-muted-foreground"
+            >
               <Link href="/dashboard/vehicles">
                 Ver todos
                 <ChevronRight className="w-3 h-3 ml-1" />
@@ -352,9 +396,7 @@ export default async function DashboardPage() {
           {recentVehicles.length === 0 ? (
             <EmptyVehicles />
           ) : (
-            recentVehicles.map((v) => (
-              <VehicleCard key={v.id} vehicle={v} />
-            ))
+            recentVehicles.map((v) => <VehicleCard key={v.id} vehicle={v} />)
           )}
         </div>
       </section>
@@ -375,7 +417,12 @@ export default async function DashboardPage() {
                 {allAlerts.length}
               </Badge>
             </div>
-            <Button variant="ghost" size="sm" asChild className="text-xs text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-xs text-muted-foreground"
+            >
               <Link href="/dashboard/reminders">
                 Ver todas
                 <ChevronRight className="w-3 h-3 ml-1" />
@@ -414,7 +461,10 @@ export default async function DashboardPage() {
               mantenimiento automáticamente.
             </p>
           </div>
-          <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button
+            asChild
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
             <Link href="/dashboard/vehicles/new">
               <Plus className="w-4 h-4 mr-2" />
               Agregar mi primer vehículo

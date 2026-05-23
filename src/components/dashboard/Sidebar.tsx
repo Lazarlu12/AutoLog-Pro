@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LayoutDashboard,
   Car,
@@ -10,6 +11,7 @@ import {
   X,
   LogOut,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +144,8 @@ function SidebarContent({
   onNavClick,
 }: SidebarProps & { onNavClick?: () => void }) {
   const { signOut } = useClerk();
-  
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const initials = user.name
     ? user.name
         .split(" ")
@@ -151,6 +154,17 @@ function SidebarContent({
         .join("")
         .toUpperCase()
     : "US";
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      // El reset se hace al entrar al dashboard, no aquí para evitar race conditions
+      await signOut({ redirectUrl: "/" });
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -173,6 +187,15 @@ function SidebarContent({
 
       <Separator className="bg-border/60" />
 
+      <div className="flex flex-col gap-2 pt-3 pb-1">
+        <div className="flex items-center justify-between px-5 py-1">
+          <span className="text-xs font-medium text-muted-foreground">Apariencia</span>
+          <ThemeToggle />
+        </div>
+      </div>
+
+      <Separator className="bg-border/60" />
+
       <div className="px-3 py-4">
         <div className="flex items-center gap-3 px-2 py-2 rounded-md group">
           <Avatar className="w-8 h-8 border border-border">
@@ -189,10 +212,15 @@ function SidebarContent({
             variant="ghost"
             size="icon"
             className="w-7 h-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             title="Cerrar sesión"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            {isLoggingOut ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <LogOut className="w-3.5 h-3.5" />
+            )}
           </Button>
         </div>
       </div>
@@ -207,12 +235,10 @@ export function Sidebar({ pendingCount, user }: SidebarProps) {
 
   return (
     <>
-      {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside className="hidden md:flex flex-col w-56 shrink-0 h-screen sticky top-0 border-r border-border/60 bg-card/50 backdrop-blur-sm">
         <SidebarContent pendingCount={pendingCount} user={user} />
       </aside>
 
-      {/* ── Mobile: botón hamburguesa + Sheet ───────────────────────────── */}
       <div className="md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>

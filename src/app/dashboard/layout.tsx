@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { getPendingCount } from "@/actions/reminders";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 
@@ -10,6 +11,12 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
  * 2. Obtener datos del usuario y contador de recordatorios pendientes
  * 3. Pasarlos al Sidebar (Client Component) vía props
  * 4. Renderizar el shell: sidebar + área principal
+ *
+ * NOTA sobre nombres:
+ * requireAuth() devuelve el usuario de la DB (campo `name` = fullName del webhook).
+ * Si el usuario no configuró nombre completo, ese campo es null.
+ * Por eso usamos currentUser() de Clerk para obtener firstName/lastName
+ * por separado — Clerk los guarda individualmente aunque fullName sea null.
  */
 export default async function DashboardLayout({
   children,
@@ -18,7 +25,21 @@ export default async function DashboardLayout({
 }) {
   // Si no hay sesión, requireAuth redirige al sign-in automáticamente
   const user = await requireAuth();
-  
+
+  // currentUser() de Clerk tiene firstName y lastName separados,
+  // más confiables que fullName cuando el usuario solo puso uno de los dos.
+  // Next.js cachea internamente la llamada a Clerk, no hay doble fetch real.
+  const clerkUser = await currentUser();
+
+  // Construye el nombre para mostrar:
+  // - "Juan García" si tiene ambos
+  // - "Juan" si solo tiene primero
+  // - null si no puso ninguno → el Sidebar muestra "Usuario" como fallback
+  const displayName =
+    clerkUser
+      ? [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || null
+      : null;
+
   // Obtiene la cantidad de recordatorios pendientes del usuario
   const countResult = await getPendingCount();
   const pendingCount = countResult.success ? countResult.data.count : 0;
@@ -29,9 +50,9 @@ export default async function DashboardLayout({
       <Sidebar
         pendingCount={pendingCount}
         user={{
-          name: user.name, 
+          name: displayName ?? "",
           email: user.email,
-          imageUrl: user.imageUrl,
+          imageUrl: user.imageUrl ?? clerkUser?.imageUrl ?? null,
         }}
       />
 

@@ -4,7 +4,7 @@ import { Copy, Info } from "lucide-react";
 import { toast } from "sonner";
 
 export function DemoCredentials() {
-  const demoEmail = "reclutadores@autolog.pro";
+  const demoEmail = "reclutadores9autolog@gmail.com";
   const demoPass = "DemoAutoLog2026!";
 
   const handleCopy = (text: string, type: "Email" | "Contraseña") => {
