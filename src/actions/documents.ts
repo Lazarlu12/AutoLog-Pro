@@ -20,8 +20,12 @@ export type SerializableDocument = Omit<Document, "createdAt" | "updatedAt" | "e
 };
 
 function serializeDocument(doc: Document): SerializableDocument {
+  // Generamos la URL pública completa en el momento para que el frontend pueda abrirla
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(doc.url);
+
   return {
     ...doc,
+    url: data.publicUrl, // Reemplazamos el path interno por la URL clickeable
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
     expiresAt: doc.expiresAt ? doc.expiresAt.toISOString() : null,

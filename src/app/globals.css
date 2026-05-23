@@ -39,53 +39,92 @@
   --font-display: var(--font-outfit);
 }
 
-/* ─── AutoLog Pro — "Midnight Precision" Design System ─────────────────── */
-/*
-   Paleta: Zinc oscuro + Ámbar dorado.
-   Inspiración: tablero de instrumentos premium + apps como Linear / Vercel.
-   Modo único: dark (la app no tiene modo claro).
-*/
+/* ─── AutoLog Pro — Design System ──────────────────────────────────────── */
+
+/* 1. MODO CLARO (Default) */
 :root {
   --radius: 0.5rem;
 
   /* Fondos */
-  --background:  #09090b;   /* zinc-950 — fondo base */
-  --card:        #18181b;   /* zinc-900 — superficies elevadas */
-  --popover:     #1c1c1f;   /* popovers y tooltips */
+  --background:  #fafafa;   /* zinc-50 */
+  --card:        #ffffff;   /* white */
+  --popover:     #ffffff;
 
   /* Texto */
-  --foreground:         #fafafa;  /* zinc-50  */
+  --foreground:         #09090b;  /* zinc-950 */
+  --card-foreground:    #09090b;
+  --popover-foreground: #09090b;
+
+  /* Primario — Ámbar dorado */
+  --primary:            #f59e0b;  /* amber-500 */
+  --primary-foreground: #ffffff;
+
+  /* Secundario */
+  --secondary:             #f4f4f5;  /* zinc-100 */
+  --secondary-foreground:  #18181b;  /* zinc-900 */
+
+  /* Muted */
+  --muted:            #f4f4f5;
+  --muted-foreground: #71717a;   /* zinc-500 */
+
+  /* Accent */
+  --accent:             #f4f4f5;
+  --accent-foreground:  #18181b;
+
+  /* Semánticos */
+  --destructive:            #ef4444;
+  --destructive-foreground: #fafafa;
+  --success:                #22c55e;
+  --success-foreground:     #ffffff;
+  --warning:                #f59e0b;
+  --warning-foreground:     #09090b;
+
+  /* Bordes e inputs */
+  --border: #e4e4e7;   /* zinc-200 */
+  --input:  #e4e4e7;
+  --ring:   #f59e0b;
+}
+
+/* 2. MODO OSCURO (Tu diseño original Midnight Precision) */
+.dark, html.dark {
+  /* Fondos */
+  --background:  #09090b;   /* zinc-950 */
+  --card:        #18181b;   /* zinc-900 */
+  --popover:     #1c1c1f;
+
+  /* Texto */
+  --foreground:         #fafafa;  /* zinc-50 */
   --card-foreground:    #fafafa;
   --popover-foreground: #fafafa;
 
-  /* Primario — Ámbar dorado (el acento de identidad) */
-  --primary:            #f59e0b;  /* amber-500 */
-  --primary-foreground: #09090b;  /* texto sobre botones primarios */
+  /* Primario — Ámbar dorado */
+  --primary:            #f59e0b;
+  --primary-foreground: #09090b;
 
-  /* Secundario — superficies sutiles */
+  /* Secundario */
   --secondary:             #27272a;  /* zinc-800 */
   --secondary-foreground:  #fafafa;
 
-  /* Muted — texto y fondos de baja jerarquía */
+  /* Muted */
   --muted:            #27272a;
-  --muted-foreground: #71717a;   /* zinc-500 */
+  --muted-foreground: #71717a;
 
-  /* Accent — hover states, selected items */
-  --accent:            #292524;   /* stone-800, cálido */
-  --accent-foreground: #fafafa;
+  /* Accent */
+  --accent:             #292524;
+  --accent-foreground:  #fafafa;
 
   /* Semánticos */
-  --destructive:            #ef4444;  /* red-500 */
+  --destructive:            #ef4444;
   --destructive-foreground: #fafafa;
-  --success:                #22c55e;  /* green-500 */
+  --success:                #22c55e;
   --success-foreground:     #09090b;
   --warning:                #f59e0b;
   --warning-foreground:     #09090b;
 
   /* Bordes e inputs */
-  --border: #27272a;   /* zinc-800 */
+  --border: #27272a;
   --input:  #27272a;
-  --ring:   #f59e0b;   /* focus ring = ámbar */
+  --ring:   #f59e0b;
 }
 
 /* ─── Base styles ───────────────────────────────────────────────────────── */
@@ -94,6 +133,10 @@
 }
 
 html {
+  color-scheme: light;
+}
+
+html.dark {
   color-scheme: dark;
 }
 
@@ -108,8 +151,14 @@ body {
 /* ─── Scrollbar personalizado ───────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: #3f3f46; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+/* Scrollbar Claro */
+::-webkit-scrollbar-thumb  { background: #d4d4d8; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+/* Scrollbar Oscuro */
+.dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
 /* ─── Tipografía display ────────────────────────────────────────────────── */
 .font-display {

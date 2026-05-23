@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Toaster } from "sonner"; // 1. Importamos Toaster
-import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider"; // <-- Importamos el proveedor
 
 /* ─── Fuentes ───────────────────────────────────────────────────────────── */
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -23,8 +22,6 @@ const outfit = Outfit({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-/* ─── Metadata ──────────────────────────────────────────────────────────── */
-
 export const metadata: Metadata = {
   title: {
     default: "AutoLog Pro",
@@ -33,8 +30,6 @@ export const metadata: Metadata = {
   description: "Control inteligente del mantenimiento de tus vehículos.",
 };
 
-/* ─── Layout ────────────────────────────────────────────────────────────── */
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,28 +37,36 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html
-        lang="es"
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
-      >
-        <body className="min-h-full flex flex-col bg-background text-foreground">
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-
-          {/* 2. Agregamos el componente Toaster personalizado */}
+      {/* suppressHydrationWarning es obligatorio al usar next-themes */}
+      <html lang="es" suppressHydrationWarning>
+        <body
+          className={`
+            ${geistSans.variable}
+            ${geistMono.variable}
+            ${outfit.variable}
+            min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300
+          `}
+        >
+          {/* Envolvemos la app con el proveedor */}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+          
           <Toaster
             position="bottom-right"
-            theme="dark"
             toastOptions={{
               style: {
-                background: "hsl(240 5% 10%)", // zinc-950
-                border: "1px solid hsl(240 4% 16%)", // zinc-800
-                color: "hsl(240 5% 84%)", // zinc-300
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
               },
             }}
           />
-          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
