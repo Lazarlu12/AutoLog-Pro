@@ -15,7 +15,7 @@ export default function Footer() {
         <p className="text-center text-sm text-zinc-400 dark:text-zinc-500">
           Desarrollado por{" "}
           <span className="font-medium text-zinc-700 dark:text-zinc-300">
-            Tu Nombre / Alias
+            Luca Daniel Lazarte/ Programador FullStack
           </span>
         </p>
 
