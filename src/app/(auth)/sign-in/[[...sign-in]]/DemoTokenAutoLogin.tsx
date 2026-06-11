@@ -19,7 +19,9 @@ export function DemoTokenAutoLogin({ token }: DemoTokenAutoLoginProps) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<"checking" | "signing-out" | "consuming" | "finalizing" | "done">("checking");
+  const [step, setStep] = useState<
+    "checking" | "signing-out" | "consuming" | "finalizing" | "done"
+  >("checking");
 
   useEffect(() => {
     if (!token || !signIn || !isLoaded) return;
@@ -43,7 +45,8 @@ export function DemoTokenAutoLogin({ token }: DemoTokenAutoLoginProps) {
           await signOut();
           if (cancelled) return;
 
-          router.replace(`/sign-in?token=${encodeURIComponent(token)}`);
+          // Recarga dura para reiniciar contexto de cookies
+          window.location.href = `/sign-in?token=${encodeURIComponent(token)}`;
           return;
         }
 
@@ -91,22 +94,23 @@ export function DemoTokenAutoLogin({ token }: DemoTokenAutoLoginProps) {
             }
 
             const url = decorateUrl("/dashboard");
-            if (url.startsWith("http")) {
-              window.location.href = url;
-            } else {
-              router.replace(url);
-            }
+            
+            // 🔥 LA SOLUCIÓN AL BUCLE:
+            // Usamos navegación dura en lugar de router.replace para forzar a 
+            // Next.js/Vercel a leer las nuevas cookies de autenticación de Clerk.
+            window.location.href = url;
           },
         });
 
         if (!cancelled) {
           setStep("done");
-          router.replace("/dashboard");
+          // NOTA: Borré el router.replace("/dashboard") de aquí abajo porque
+          // window.location.href ya se encarga de cambiar la página.
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("[demo] error inesperado:", err);
         if (!cancelled) {
-          setError("Error inesperado al abrir la demo.");
+          setError(err.errors?.[0]?.longMessage || "Error inesperado al abrir la demo.");
         }
       } finally {
         clearTimeout(timeoutId);
@@ -135,7 +139,7 @@ export function DemoTokenAutoLogin({ token }: DemoTokenAutoLoginProps) {
         <button
           type="button"
           onClick={() => router.replace("/sign-in")}
-          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white"
+          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition-colors"
         >
           Volver
         </button>
@@ -146,7 +150,7 @@ export function DemoTokenAutoLogin({ token }: DemoTokenAutoLoginProps) {
   return (
     <div className="w-full rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center gap-3">
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <Loader2 className="h-5 w-5 animate-spin text-zinc-900 dark:text-zinc-100" />
         <div>
           <p className="font-semibold text-zinc-900 dark:text-zinc-100">
             {step === "signing-out" && "Cerrando sesión actual..."}
@@ -163,7 +167,7 @@ export function DemoTokenAutoLogin({ token }: DemoTokenAutoLoginProps) {
 
       <div className="mt-6 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
         <Sparkles className="h-4 w-4" />
-        Acceso sin Gmail ni contraseña
+        Acceso sin email ni contraseña
       </div>
     </div>
   );
