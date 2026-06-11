@@ -2,13 +2,13 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // Rutas que NO requieren autenticación
 const isPublicRoute = createRouteMatcher([
-  "/",                    // landing/marketing
+  "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/api/webhooks(.*)",    // webhooks de Clerk deben ser públicos
+  "/api/webhooks(.*)",
+  "/api/demo-login(.*)",
 ]);
 
-// CAMBIO CLAVE: Usa 'export default' para que Next.js/Clerk lo reconozcan
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
@@ -17,7 +17,6 @@ export default clerkMiddleware(async (auth, request) => {
 
 export const config = {
   matcher: [
-    // Aplica a todo excepto archivos estáticos y _next
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
   ],

@@ -1,38 +1,36 @@
+// src/app/(auth)/sign-in/[[...sign-in]]/page.tsx
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { SignIn } from "@clerk/nextjs";
-import { DemoCredentials } from "./DemoCredentials";
+import { CustomSignInForm } from "./CustomSignInForm";
+import { DemoTokenAutoLogin } from "./DemoTokenAutoLogin";
 
 export const metadata = {
   title: "Iniciar Sesión — AutoLog Pro",
 };
 
-export default async function SignInPage() {
-  // Protección: si ya hay sesión, mandarlo directo al dashboard
+type SignInPageProps = {
+  searchParams?: Promise<{
+    token?: string | string[];
+  }>;
+};
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
   const session = await auth();
+
   if (session?.userId) {
     redirect("/dashboard");
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-zinc-50 dark:bg-zinc-950 relative">
-      
-      {/* Patrón de fondo sutil */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
-      
-      <div className="relative z-10 flex flex-col items-center w-full max-w-md gap-8 animate-fade-in">
-        {/* Componente nativo de Clerk */}
-        <SignIn 
-          appearance={{
-            elements: {
-              rootBox: "w-full",
-              cardBox: "w-full shadow-lg border border-zinc-200 dark:border-zinc-800 rounded-xl",
-            }
-          }}
-        />
+  const resolved = searchParams ? await searchParams : undefined;
+  const tokenParam = resolved?.token;
+  const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
 
-        {/* Tarjeta de Cuenta Demo para reclutadores */}
-        <DemoCredentials />
+  return (
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950 sm:px-6 lg:px-8">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]" />
+
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8">
+        {token ? <DemoTokenAutoLogin token={token} /> : <CustomSignInForm />}
       </div>
     </div>
   );
