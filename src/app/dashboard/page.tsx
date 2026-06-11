@@ -2,12 +2,10 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { getVehiclesByUser } from "@/actions/vehicles";
 import { getExpired, getUpcoming } from "@/actions/reminders";
-import { resetDemoData } from "@/actions/demo"; // <--- IMPORTACIÓN
 import { currentUser } from "@clerk/nextjs/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Car,
   Bell,
@@ -25,8 +23,6 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Dashboard",
 };
-
-/* ─── Helpers ───────────────────────────────────────────────────────────── */
 
 function getGreeting(name: string | null | undefined): {
   greeting: string;
@@ -63,8 +59,6 @@ function formatDate(iso: string): string {
   });
 }
 
-/* ─── Componentes de stats ──────────────────────────────────────────────── */
-
 function StatCard({
   label,
   value,
@@ -100,12 +94,7 @@ function StatCard({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {label}
             </p>
-            <p
-              className={cn(
-                "text-3xl font-display font-bold",
-                variantStyles[variant],
-              )}
-            >
+            <p className={cn("text-3xl font-display font-bold", variantStyles[variant])}>
               {value}
             </p>
           </div>
@@ -124,8 +113,6 @@ function StatCard({
   return card;
 }
 
-/* ─── Vehicle card ──────────────────────────────────────────────────────── */
-
 function VehicleCard({
   vehicle,
 }: {
@@ -142,7 +129,6 @@ function VehicleCard({
     <Link href={`/dashboard/vehicles/${vehicle.id}`}>
       <Card className="bg-card border-border hover:border-primary/30 hover:bg-card/80 transition-all duration-200 group cursor-pointer">
         <CardContent className="p-4">
-          {/* Ícono del auto */}
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center group-hover:bg-primary/10 transition-colors">
               <Car className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -150,7 +136,6 @@ function VehicleCard({
             <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
           </div>
 
-          {/* Info */}
           <div>
             <p className="font-semibold text-foreground text-sm leading-tight">
               {vehicle.nickname}
@@ -160,7 +145,6 @@ function VehicleCard({
             </p>
           </div>
 
-          {/* Kilometraje */}
           <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/50">
             <Gauge className="w-3.5 h-3.5 text-muted-foreground/60" />
             <span className="text-xs text-muted-foreground">
@@ -172,8 +156,6 @@ function VehicleCard({
     </Link>
   );
 }
-
-/* ─── Reminder item ─────────────────────────────────────────────────────── */
 
 function ReminderItem({
   reminder,
@@ -239,8 +221,6 @@ function ReminderItem({
   );
 }
 
-/* ─── Empty states ──────────────────────────────────────────────────────── */
-
 function EmptyVehicles() {
   return (
     <div className="col-span-full">
@@ -254,8 +234,7 @@ function EmptyVehicles() {
               Sin vehículos todavía
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Agregá tu primer vehículo para empezar a registrar su
-              mantenimiento.
+              Agregá tu primer vehículo para empezar a registrar su mantenimiento.
             </p>
           </div>
           <Button
@@ -274,25 +253,12 @@ function EmptyVehicles() {
   );
 }
 
-/* ─── Page ──────────────────────────────────────────────────────────────── */
-
 export default async function DashboardPage() {
-  // Obtenemos el perfil completo directamente desde Clerk
+  const user = await requireAuth();
   const clerkUser = await currentUser();
 
-  const userEmail = clerkUser?.emailAddresses[0]?.emailAddress;
+  const displayName = clerkUser?.firstName ?? user.name ?? null;
 
-  // Log rápido para descartar errores de dedo
-  console.log("DEBUG: Usuario intentando entrar:", userEmail);
-
-  if (userEmail === "reclutadores9autolog@gmail.com") {
-    console.log("DEBUG: Reseteando datos demo...");
-    await resetDemoData();
-  }
-
-  const displayName = clerkUser?.firstName;
-
-  // Fetch en paralelo de los datos
   const [vehiclesResult, expiredResult, upcomingResult] = await Promise.all([
     getVehiclesByUser(),
     getExpired(),
@@ -303,13 +269,9 @@ export default async function DashboardPage() {
   const expired = expiredResult.success ? expiredResult.data : [];
   const upcoming = upcomingResult.success ? upcomingResult.data : [];
 
-  // Pasamos el nombre extraído de Clerk al saludo
   const { greeting, sub } = getGreeting(displayName);
-
-  // Últimos 4 vehículos para la preview
   const recentVehicles = vehicles.slice(0, 4);
 
-  // Máximo 5 alertas para el dashboard (mezcla vencidos + próximos)
   const allAlerts = [
     ...expired.map((r) => ({ ...r, alertType: "expired" as const })),
     ...upcoming.map((r) => ({ ...r, alertType: "upcoming" as const })),
@@ -317,7 +279,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
@@ -337,7 +298,6 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      {/* ── Stats ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 stagger">
         <div className="animate-fade-up">
           <StatCard
@@ -368,7 +328,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Vehículos recientes ──────────────────────────────────────────── */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -401,7 +360,6 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* ── Alertas activas ─────────────────────────────────────────────── */}
       {allAlerts.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
@@ -444,7 +402,6 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* ── Empty state global (sin vehículos ni alertas) ───────────────── */}
       {vehicles.length === 0 && allAlerts.length === 0 && (
         <div className="py-12 flex flex-col items-center gap-4 text-center">
           <div className="relative">

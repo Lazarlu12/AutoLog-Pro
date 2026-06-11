@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LayoutDashboard,
@@ -22,8 +22,6 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/nextjs";
 
-/* ─── Tipos ─────────────────────────────────────────────────────────────── */
-
 interface SidebarProps {
   pendingCount: number;
   user: {
@@ -32,8 +30,6 @@ interface SidebarProps {
     imageUrl: string | null;
   };
 }
-
-/* ─── Ítems de navegación ───────────────────────────────────────────────── */
 
 const navItems = [
   {
@@ -57,8 +53,6 @@ const navItems = [
   },
 ] as const;
 
-/* ─── Logo ──────────────────────────────────────────────────────────────── */
-
 function Logo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2.5 group">
@@ -67,7 +61,7 @@ function Logo() {
         <Car className="relative w-4 h-4 text-primary" strokeWidth={2.5} />
       </div>
       <div className="flex flex-col leading-none">
-        <span className="font-display font-700 text-sm tracking-tight text-foreground">
+        <span className="font-display font-bold text-sm tracking-tight text-foreground">
           AutoLog
         </span>
         <span className="text-[10px] font-medium text-primary tracking-widest uppercase">
@@ -77,8 +71,6 @@ function Logo() {
     </Link>
   );
 }
-
-/* ─── Nav item ──────────────────────────────────────────────────────────── */
 
 function NavItem({
   item,
@@ -136,14 +128,13 @@ function NavItem({
   );
 }
 
-/* ─── Contenido del sidebar ─────────────────────────────────────────────── */
-
 function SidebarContent({
   pendingCount,
   user,
   onNavClick,
 }: SidebarProps & { onNavClick?: () => void }) {
   const { signOut } = useClerk();
+  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const initials = user.name
@@ -158,8 +149,8 @@ function SidebarContent({
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      // El reset se hace al entrar al dashboard, no aquí para evitar race conditions
-      await signOut({ redirectUrl: "/" });
+      await signOut();
+      router.push("/");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
       setIsLoggingOut(false);
@@ -227,8 +218,6 @@ function SidebarContent({
     </div>
   );
 }
-
-/* ─── Sidebar principal ─────────────────────────────────────────────────── */
 
 export function Sidebar({ pendingCount, user }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
