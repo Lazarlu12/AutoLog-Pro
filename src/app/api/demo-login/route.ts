@@ -1,5 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { resetDemoData } from "@/actions/demo";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Reset demo fuera del render del dashboard.
+    // Si falla, no rompemos el login; solo dejamos el estado anterior.
+    try {
+      await resetDemoData();
+    } catch (resetError) {
+      console.error("demo-reset error:", resetError);
+    }
+
     const client = await clerkClient();
 
     const token = await client.signInTokens.createSignInToken({
